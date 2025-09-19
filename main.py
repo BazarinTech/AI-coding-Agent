@@ -25,6 +25,12 @@ def main():
         - Execute Python files with optional arguments
         - Write or overwrite file
 
+        When the user asks about the code project - they are reffering to
+        the working directory. So you should typically start looking at
+        the project files, and figuring out how to run the project and how to
+        run its tests, you'll always want to test the tests and actual program
+        to verify that behavior is working
+
         All paths you provide should be relative to the working directory. You do not need to specify the working directory in your function calls as it is automatically injected for security reasons.
     """
 
@@ -56,27 +62,38 @@ def main():
         tools=[available_functions], system_instruction=system_prompt
     )
 
-    response = client.models.generate_content(
-        model='gemini-2.0-flash-001',
-        contents=messages,
-        config=config
-    )
+    max_iters = 20
 
-    if response is None or response.usage_metadata is None:
-        print('Response is maliformed')
-        return
+    for i in range(0, max_iters):
+        response = client.models.generate_content(
+            model='gemini-2.0-flash-001',
+            contents=messages,
+            config=config
+        )
 
-    if verbose_flag:
-        print(f"User prompt: {prompt}")
-        print(f"Prompt tokens: {response.usage_metadata.prompt_token_count}")
-        print(f"Response tokens: {response.usage_metadata.candidates_token_count}")
+        if response is None or response.usage_metadata is None:
+            print('Response is maliformed')
+            return
 
-    if response.function_calls:
-        for function_call_part in response.function_calls:
-            result = call_function(function_call_part, verbose_flag)
-            print(result)
-    else:
-        print(response.text)
+        if verbose_flag:
+            print(f"User prompt: {prompt}")
+            print(f"Prompt tokens: {response.usage_metadata.prompt_token_count}")
+            print(f"Response tokens: {response.usage_metadata.candidates_token_count}")
+
+        if response.candidates:
+            for candidate in response.candidates:
+                if candidate is None or candidate.content is None:
+                    continue
+                messages.append(candidate.content)
+
+        if response.function_calls:
+            for function_call_part in response.function_calls:
+                result = call_function(function_call_part, verbose_flag)
+                messages.append(result)
+        else:
+            # Final agent text message
+            print(response.text)
+            return
 
 
 main()
