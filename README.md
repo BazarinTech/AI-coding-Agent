@@ -1,5 +1,4 @@
 
-````markdown
 # GOBIN AI Coding Agent
 
 **GOBIN** is an interactive AI-powered coding assistant designed to help developers manage Python-based projects efficiently. It can read files, write code, execute Python scripts, run shell commands (with approval), and provide intelligent guidance—all from your terminal.
@@ -153,7 +152,4 @@ Feel free to submit issues or pull requests. Contributions to improve Python sup
 * [PyPI Package](https://pypi.org/project/gobin-cli/)
 * [Gemini AI API](https://developers.google.com/vertex-ai/docs/text-generation/overview)
 
-```
-
----
 
