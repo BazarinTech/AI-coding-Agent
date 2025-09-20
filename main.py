@@ -23,8 +23,14 @@ def main():
     api_key = os.environ.get("GEMINI_API_KEY")
     client = genai.Client(api_key=api_key)
 
-    system_prompt = """
+    # detect the current working directory
+    # cwd = os.getcwd()
+    cwd = 'calculator'
+
+    system_prompt = f"""
         You are a helpful AI coding agent.
+
+        Current working directory: {cwd}
 
         When a user asks a question or makes a request, make a function call plan. You can perform the following operations:
 
@@ -33,7 +39,7 @@ def main():
         - Execute Python files with optional arguments
         - Write or overwrite file
 
-        All paths must be relative to the working directory.
+        All paths must be relative to this working directory unless the user specifies otherwise.
     """
 
     available_functions = types.Tool(
