@@ -1,14 +1,16 @@
 import os
 import sys
+from pathlib import Path
 from dotenv import load_dotenv
 from google import genai
 from google.genai import types
-from functions.get_files_info import schema_get_files_info
-from functions.get_file_content import schema_get_file_content
-from functions.run_python import schema_run_python_file
-from functions.write_file import schema_write_file
-from functions.run_shell import schema_run_shell_command
-from call_function import call_function
+from .functions.get_files_info import schema_get_files_info
+from .functions.get_file_content import schema_get_file_content
+from .functions.run_python import schema_run_python_file
+from .functions.write_file import schema_write_file
+from .functions.run_shell import schema_run_shell_command
+from .functions.create_directory import schema_create_directory
+from .call_function import call_function
 from rich.console import Console
 from rich.syntax import Syntax
 from rich.panel import Panel
@@ -18,14 +20,38 @@ from prompt_toolkit.key_binding import KeyBindings
 console = Console()
 
 
-def main():
-    load_dotenv()
+def load_api_key():
+    """Try loading GEMINI_API_KEY from .env or environment."""
+    # Try project root .env
+    package_root = Path(__file__).resolve().parent.parent
+    env_path = package_root / ".env"
+
+    # Load .env if exists
+    if env_path.exists():
+        load_dotenv(env_path)
+
+    # Also load from current working dir .env if available
+    load_dotenv(dotenv_path=Path(".") / ".env")
+
     api_key = os.environ.get("GEMINI_API_KEY")
+    if not api_key:
+        console.print(
+            "[bold red]❌ GEMINI_API_KEY not found![/bold red]\n"
+            "Set it in your environment:\n\n"
+            "   export GEMINI_API_KEY='your_api_key_here'\n\n"
+            "Or create a .env file with:\n\n"
+            "   GEMINI_API_KEY=your_api_key_here\n"
+        )
+        sys.exit(1)
+    return api_key
+
+
+def main():
+    api_key = load_api_key()
     client = genai.Client(api_key=api_key)
 
     # detect the current working directory
-    #  cwd = os.getcwd()
-    cwd = "calculator"
+    cwd = os.getcwd()
 
     system_prompt = f"""
         You are a helpful AI coding agent.
@@ -50,6 +76,7 @@ def main():
             schema_run_python_file,
             schema_get_file_content,
             schema_run_shell_command,
+            schema_create_directory
         ]
     )
 
@@ -84,7 +111,6 @@ def main():
             buffer.insert_text("\n")
 
     session = PromptSession(key_bindings=bindings)
-
     messages = []  # keep conversation memory
 
     while True:
@@ -108,10 +134,7 @@ def main():
 
             max_iters = 20
             for _ in range(max_iters):
-                # ⏳ Show spinner while Gemini processes
-                with console.status(
-                    "[bold cyan]🤖 Thinking...[/bold cyan]", spinner="dots"
-                ):
+                with console.status("[bold cyan]🤖 Thinking...[/bold cyan]", spinner="dots"):
                     response = client.models.generate_content(
                         model="gemini-2.0-flash-001",
                         contents=messages,

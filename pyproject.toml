@@ -1,12 +1,25 @@
+[build-system]
+requires = ["setuptools>=61.0", "setuptools-scm", "wheel"]
+build-backend = "setuptools.build_meta"
+
 [project]
-name = "coding-agent"
-version = "0.1.0"
-description = "Add your description here"
+name = "gobin"
+# version is handled automatically by setuptools_scm
+dynamic = ["version"]
+description = "AI Coding Agent CLI"
+authors = [{ name = "Xgramm Platforms" }]
 readme = "README.md"
-requires-python = ">=3.12"
+requires-python = ">=3.8"
 dependencies = [
-    "google-genai==1.12.1",
-    "prompt-toolkit>=3.0.52",
-    "python-dotenv==1.1.0",
-    "rich>=14.1.0",
+    "python-dotenv",
+    "rich",
+    "prompt_toolkit",
+    "google-genai",
 ]
+
+[project.scripts]
+gobin = "gobin.main:main"
+
+[tool.setuptools_scm]
+version_scheme = "post-release"
+local_scheme = "node-and-date"
