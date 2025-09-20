@@ -7,13 +7,13 @@ from functions.get_files_info import schema_get_files_info
 from functions.get_file_content import schema_get_file_content
 from functions.run_python import schema_run_python_file
 from functions.write_file import schema_write_file
+from functions.run_shell import schema_run_shell_command
 from call_function import call_function
 from rich.console import Console
 from rich.syntax import Syntax
 from rich.panel import Panel
 from prompt_toolkit import PromptSession
 from prompt_toolkit.key_binding import KeyBindings
-
 
 console = Console()
 
@@ -24,8 +24,8 @@ def main():
     client = genai.Client(api_key=api_key)
 
     # detect the current working directory
-    # cwd = os.getcwd()
-    cwd = 'calculator'
+    #  cwd = os.getcwd()
+    cwd = "calculator"
 
     system_prompt = f"""
         You are a helpful AI coding agent.
@@ -38,6 +38,7 @@ def main():
         - Read file contents
         - Execute Python files with optional arguments
         - Write or overwrite file
+        - Run shell commands (with user approval)
 
         All paths must be relative to this working directory unless the user specifies otherwise.
     """
@@ -48,6 +49,7 @@ def main():
             schema_write_file,
             schema_run_python_file,
             schema_get_file_content,
+            schema_run_shell_command,
         ]
     )
 
@@ -58,11 +60,15 @@ def main():
     # Parse CLI args
     verbose_flag = "--verbose" in sys.argv
 
-    console.print(
-        Panel.fit("🤖 [bold cyan]GOBIN Coding Agent[/bold cyan]", border_style="cyan")
-    )
-    console.print("Type 'exit' or 'quit' to stop.\n")
-    console.print("[dim]Tip: Shift+Enter for a new line, Enter to submit[/dim]\n")
+    def print_welcome():
+        console.print(
+            Panel.fit("🤖 [bold cyan]GOBIN AI Coding Agent[/bold cyan]", border_style="cyan")
+        )
+        console.print("Type 'exit' or 'quit' to stop.\n")
+        console.print("[dim]Tip: Shift+Enter for a new line, Enter to submit[/dim]\n")
+        console.print("[dim]Type 'clear' or 'cls' to clear the screen[/dim]\n")
+
+    print_welcome()
 
     # Setup prompt_toolkit session with multiline support
     bindings = KeyBindings()
@@ -79,25 +85,38 @@ def main():
 
     session = PromptSession(key_bindings=bindings)
 
+    messages = []  # keep conversation memory
+
     while True:
         try:
             prompt = session.prompt("> ", multiline=True).strip()
+
             if prompt.lower() in ["exit", "quit"]:
                 console.print("[bold red]Goodbye 👋[/bold red]")
                 break
 
+            # NEW: clear screen
+            if prompt.lower() in ["clear", "cls"]:
+                console.clear()
+                print_welcome()
+                continue
+
             if not prompt:
                 continue
 
-            messages = [
-                types.Content(role="user", parts=[types.Part(text=prompt)]),
-            ]
+            messages.append(types.Content(role="user", parts=[types.Part(text=prompt)]))
 
             max_iters = 20
             for _ in range(max_iters):
-                response = client.models.generate_content(
-                    model="gemini-2.0-flash-001", contents=messages, config=config
-                )
+                # ⏳ Show spinner while Gemini processes
+                with console.status(
+                    "[bold cyan]🤖 Thinking...[/bold cyan]", spinner="dots"
+                ):
+                    response = client.models.generate_content(
+                        model="gemini-2.0-flash-001",
+                        contents=messages,
+                        config=config,
+                    )
 
                 if response is None or response.usage_metadata is None:
                     console.print("[bold red]⚠️ Response malformed[/bold red]")
