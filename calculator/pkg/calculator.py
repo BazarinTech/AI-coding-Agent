@@ -30,7 +30,7 @@ class Calculator:
                 while (
                     operators
                     and operators[-1] in self.operators
-                    and self.precedence[operators[-1]] >= self.precedence[token]
+                    and self.precedence[operators[-1]] > self.precedence[token]
                 ):
                     self._apply_operator(operators, values)
                 operators.append(token)

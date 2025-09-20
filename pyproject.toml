@@ -6,5 +6,7 @@ readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
     "google-genai==1.12.1",
+    "prompt-toolkit>=3.0.52",
     "python-dotenv==1.1.0",
+    "rich>=14.1.0",
 ]
