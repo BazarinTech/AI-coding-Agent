@@ -3,23 +3,36 @@ requires = ["setuptools>=61.0", "setuptools-scm", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "gobin"
-# version is handled automatically by setuptools_scm
+name = "gobin-cli"
 dynamic = ["version"]
 description = "AI Coding Agent CLI"
 authors = [{ name = "Xgramm Platforms" }]
-readme = "README.md"
+readme = { file = "README.md", content-type = "text/markdown" }
 requires-python = ">=3.8"
+license = { text = "MIT" }
+keywords = ["ai", "cli", "developer-tools", "automation"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Software Development :: Libraries :: Application Frameworks",
+    "Topic :: Utilities",
+]
 dependencies = [
-    "python-dotenv",
-    "rich",
-    "prompt_toolkit",
-    "google-genai",
+    "python-dotenv>=1.0.0",
+    "rich>=13.0.0",
+    "prompt_toolkit>=3.0.0",
+    "google-genai>=0.3.0",
 ]
 
 [project.scripts]
-gobin = "gobin.main:main"
+gobin = "gobin.cli:run_cli"
 
 [tool.setuptools_scm]
 version_scheme = "post-release"
-local_scheme = "node-and-date"
+local_scheme = "no-local-version"
