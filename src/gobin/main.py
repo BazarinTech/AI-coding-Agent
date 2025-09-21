@@ -14,6 +14,7 @@ from .call_function import call_function
 from rich.console import Console
 from rich.syntax import Syntax
 from rich.panel import Panel
+from rich.markdown import Markdown
 from prompt_toolkit import PromptSession
 from prompt_toolkit.key_binding import KeyBindings
 
@@ -22,15 +23,11 @@ console = Console()
 
 def load_api_key():
     """Try loading GEMINI_API_KEY from .env or environment."""
-    # Try project root .env
     package_root = Path(__file__).resolve().parent.parent
     env_path = package_root / ".env"
 
-    # Load .env if exists
     if env_path.exists():
         load_dotenv(env_path)
-
-    # Also load from current working dir .env if available
     load_dotenv(dotenv_path=Path(".") / ".env")
 
     api_key = os.environ.get("GEMINI_API_KEY")
@@ -50,7 +47,6 @@ def main():
     api_key = load_api_key()
     client = genai.Client(api_key=api_key)
 
-    # detect the current working directory
     cwd = os.getcwd()
 
     system_prompt = f"""
@@ -58,7 +54,8 @@ def main():
 
         Current working directory: {cwd}
 
-        When a user asks a question or makes a request, make a function call plan. You can perform the following operations:
+        When a user asks a question or makes a request, make a function call plan. 
+        You can perform the following operations:
 
         - List files and directories
         - Read file contents
@@ -76,7 +73,7 @@ def main():
             schema_run_python_file,
             schema_get_file_content,
             schema_run_shell_command,
-            schema_create_directory
+            schema_create_directory,
         ]
     )
 
@@ -84,7 +81,6 @@ def main():
         tools=[available_functions], system_instruction=system_prompt
     )
 
-    # Parse CLI args
     verbose_flag = "--verbose" in sys.argv
 
     def print_welcome():
@@ -111,17 +107,18 @@ def main():
             buffer.insert_text("\n")
 
     session = PromptSession(key_bindings=bindings)
-    messages = []  # keep conversation memory
+    messages = []
 
     while True:
         try:
-            prompt = session.prompt("> ", multiline=True).strip()
+            prompt = session.prompt(
+                "\nEnter a Prompt > ", multiline=True
+            ).strip()
 
             if prompt.lower() in ["exit", "quit"]:
-                console.print("[bold red]Goodbye 👋[/bold red]")
+                console.print("[bold red]👋 Goodbye![/bold red]")
                 break
 
-            # NEW: clear screen
             if prompt.lower() in ["clear", "cls"]:
                 console.clear()
                 print_welcome()
@@ -129,6 +126,15 @@ def main():
 
             if not prompt:
                 continue
+
+            # Show user input panel
+            console.print(
+                Panel(
+                    Markdown(prompt),
+                    title="[bold magenta]User Prompt[/bold magenta]",
+                    border_style="magenta"
+                )
+            )
 
             messages.append(types.Content(role="user", parts=[types.Part(text=prompt)]))
 
@@ -141,7 +147,7 @@ def main():
                         config=config,
                     )
 
-                if response is None or response.usage_metadata is None:
+                if not response or not response.usage_metadata:
                     console.print("[bold red]⚠️ Response malformed[/bold red]")
                     break
 
@@ -162,8 +168,35 @@ def main():
 
                 if response.function_calls:
                     for function_call_part in response.function_calls:
-                        result = call_function(function_call_part, verbose_flag)
-                        messages.append(result)
+                        # ⬇️ call_function now returns (content, dict)
+                        content, response_dict = call_function(function_call_part, verbose_flag)
+                        messages.append(content)
+
+                        # --- Execution Summary ---
+                        success = response_dict.get("success", False)
+                        message = response_dict.get("message", "")
+
+                        summary_text = (
+                            f"[bold green]✅ Operation successful[/bold green]\n"
+                            if success else f"[bold red]❌ Operation failed[/bold red]\n"
+                        )
+                        summary_text += f"[cyan]Function:[/cyan] {function_call_part.name}\n"
+                        summary_text += f"[cyan]Message:[/cyan] {message}\n\n"
+
+                        if success:
+                            summary_text += (
+                                "👉 [bold]Next step:[/bold] Continue with your next request "
+                                "or run the updated code to verify changes."
+                            )
+                        else:
+                            summary_text += (
+                                "⚠️ [bold]Next step:[/bold] Review the error above and fix inputs or code."
+                            )
+
+                        console.print(
+                            Panel(summary_text, title="✨ Execution Summary", border_style="cyan")
+                        )
+
                 else:
                     output = response.text or ""
                     if "```" in output:
@@ -171,14 +204,14 @@ def main():
                             if block.strip().startswith("python"):
                                 code = block.replace("python", "", 1).strip()
                                 console.print(Syntax(code, "python"))
-                            elif not block.strip().startswith(("python", "")):
+                            elif block.strip():
                                 console.print(block.strip())
                     else:
                         console.print(output)
                     break
 
         except KeyboardInterrupt:
-            console.print("\n[bold red]Goodbye 👋[/bold red]")
+            console.print("\n[bold red]👋 Goodbye![/bold red]")
             break
         except Exception as e:
             console.print(f"[bold red]⚠️ Error: {e}[/bold red]")
