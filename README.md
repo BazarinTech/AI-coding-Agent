@@ -32,10 +32,10 @@ GOBIN can perform the following tasks for Python projects:
 
 ## ⚡ Installation
 
-GOBIN is published on PyPI and can be installed globally using `pip`:
+GOBIN is published on PyPI and can be installed globally using `pipx`:
 
 ```bash
-pip install gobin-cli
+pipx install gobin-cli
 ````
 
 ---
@@ -107,7 +107,7 @@ gobin
 To update to the latest version:
 
 ```bash
-pip install --upgrade gobin-cli
+pipx upgrade gobin-cli
 ```
 
 ---
@@ -115,6 +115,7 @@ pip install --upgrade gobin-cli
 ## 💻 System Requirements
 
 * Python >= 3.8
+* PIPX
 * Compatible with Linux, macOS, and Windows
 * Terminal or shell for CLI usage
 * Gemini API key
