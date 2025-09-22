@@ -63,6 +63,13 @@ def main():
         - Write or overwrite file
         - Run shell commands (with user approval)
 
+        Important: You must never call more than one function in a single turn. 
+        If multiple actions are needed, return only the first step. 
+        Wait for the system to confirm before attempting the next.
+
+        You can install Python packages yourself. But if a package is missing and you tried to install and it refuses, tell the user to install it manually.
+
+
         All paths must be relative to this working directory unless the user specifies otherwise.
     """
 
